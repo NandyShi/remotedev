@@ -5,8 +5,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "http_async_server.hpp"
-#include "http_sync_server.hpp"
+#include <beast/http/async_server.hpp>
+#include <beast/http/sync_server.hpp>
 
 #include <beast/test/sig_wait.hpp>
 #include <boost/program_options.hpp>

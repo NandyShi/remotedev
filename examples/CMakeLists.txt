@@ -1,7 +1,7 @@
 # Part of Beast
 
-GroupSources(extras/beast extras)
 GroupSources(include/beast beast)
+GroupSources(extras/beast extras)
 
 GroupSources(examples "/")
 
@@ -22,8 +22,6 @@ add_executable (http-server
     ${EXTRAS_INCLUDES}
     file_body.hpp
     mime_type.hpp
-    http_async_server.hpp
-    http_sync_server.hpp
     http_server.cpp
 )
 

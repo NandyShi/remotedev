@@ -5,8 +5,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "websocket_async_echo_server.hpp"
-#include "websocket_sync_echo_server.hpp"
+#include <beast/websocket/async_server.hpp>
+#include <beast/websocket/sync_server.hpp>
 #include <beast/test/sig_wait.hpp>
 
 int main()

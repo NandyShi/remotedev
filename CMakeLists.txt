@@ -79,6 +79,7 @@ file(GLOB_RECURSE BEAST_INCLUDES
 file(GLOB_RECURSE EXTRAS_INCLUDES
     ${PROJECT_SOURCE_DIR}/extras/beast/*.hpp
     ${PROJECT_SOURCE_DIR}/extras/beast/*.ipp
+    ${PROJECT_SOURCE_DIR}/extras/README.md
 )
 
 add_subdirectory (examples)

@@ -85,20 +85,20 @@ void
 enable_yield_to::yield_to(Function&& f)
 {
     {
-        std::lock_guard<std::mutex> lock(m_);
+        std::lock_guard<std::mutex> lock{m_};
         running_ = true;
     }
     boost::asio::spawn(ios_,
         [&](boost::asio::yield_context do_yield)
         {
             f(do_yield);
-            std::lock_guard<std::mutex> lock(m_);
+            std::lock_guard<std::mutex> lock{m_};
             running_ = false;
             cv_.notify_all();
         }
-        , boost::coroutines::attributes(2 * 1024 * 1024));
+        , boost::coroutines::attributes{2 * 1024 * 1024});
 
-    std::unique_lock<std::mutex> lock(m_);
+    std::unique_lock<std::mutex> lock{m_};
     cv_.wait(lock, [&]{ return ! running_; });
 }
 
