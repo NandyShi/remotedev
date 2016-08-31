@@ -63,7 +63,10 @@ int main(int ac, char const* av[])
     }
     else
     {
-        async_file_server server(ep, threads, root);
+        io_threads iot{threads};
+        async_file_server server{root};
+        boost::system::error_code ec;
+        server.open(threads, ep, ec);
         beast::test::sig_wait();
     }
 }

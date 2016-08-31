@@ -27,6 +27,60 @@
 namespace beast {
 namespace http {
 
+/** A pool of io_service threads.
+
+    This manages a pool of threads running on an io_service.
+*/
+class io_threads
+{
+    std::vector<std::thread> v_;
+    boost::asio::io_service ios_;
+    boost::optional<boost::asio::io_service::work> work_;
+
+public:
+    /** Construct the pool.
+
+        @param n The number of threads to launch.
+    */
+    explicit
+    io_threads(std::size_t n)
+        : work_(ios_)
+    {
+        v_.reserve(n);
+        while(n--)
+            v_.emplace_back(
+                [&]{ ios_.run(); });
+    }
+
+    /** Destroy the pool.
+
+        This function blocks until all pending work in
+        the io_service is complete.
+    */
+    ~io_threads()
+    {
+        work_ = boost::none;
+        for(auto& t : v_)
+            t.join();
+    }
+
+    /// Return the io_service associated with the pool.
+    boost::asio::io_service&
+    get_io_service()
+    {
+        return ios_;
+    }
+
+private:
+    void
+    run()
+    {
+        ios_.run();
+    }
+};
+
+//------------------------------------------------------------------------------
+
 /** Asynchronous HTTP/1 server.
 
     This implements an asynchronous HTTP server with
@@ -60,10 +114,14 @@ public:
 
     using req_type = request_v1<string_body>;
 
-    async_server(endpoint_type const& ep,
-            std::size_t threads, std::string const& root);
+    async_server();
 
     ~async_server();
+
+    /// Open the listening port.
+    void
+    open(std::size_t threads,
+        endpoint_type const& ep, error_code& ec);
 
     template<class... Args>
     void
@@ -106,18 +164,23 @@ private:
     boost::asio::io_service ios_;
     boost::asio::ip::tcp::acceptor acceptor_;
     socket_type sock_;
-    std::string root_;
     std::vector<std::thread> thread_;
     endpoint_type ep_;
 };
 
 template<class Derived>
 async_server<Derived>::
-async_server(endpoint_type const& ep,
-        std::size_t threads, std::string const& root)
+async_server()
     : acceptor_(ios_)
     , sock_(ios_)
-    , root_(root)
+{
+}
+
+template<class Derived>
+void
+async_server<Derived>::
+open(std::size_t threads,
+    endpoint_type const& ep, error_code& ec)
 {
     acceptor_.open(ep.protocol());
     acceptor_.bind(ep);
@@ -426,10 +489,9 @@ class async_file_server
     std::string root_;
 
 public:
-    async_file_server(endpoint_type const& ep,
-            std::size_t threads, std::string const& root)
-        : async_server<async_file_server>(ep, threads, root)
-        , root_(root)
+    explicit
+    async_file_server(std::string const& root)
+        : root_(root)
     {
     }
 
@@ -482,7 +544,6 @@ public:
         }
     }
 };
-
 
 } // http
 } // beast
