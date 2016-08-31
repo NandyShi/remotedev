@@ -58,12 +58,12 @@ int main(int ac, char const* av[])
 
     if(sync)
     {
-        http_sync_server server(ep, root);
+        sync_server server(ep, root);
         beast::test::sig_wait();
     }
     else
     {
-        http_async_server server(ep, threads, root);
+        async_file_server server(ep, threads, root);
         beast::test::sig_wait();
     }
 }

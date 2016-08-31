@@ -26,7 +26,7 @@
 namespace beast {
 namespace http {
 
-class http_sync_server
+class sync_server
 {
     using endpoint_type = boost::asio::ip::tcp::endpoint;
     using address_type = boost::asio::ip::address;
@@ -44,7 +44,7 @@ class http_sync_server
     std::thread thread_;
 
 public:
-    http_sync_server(endpoint_type const& ep,
+    sync_server(endpoint_type const& ep,
             std::string const& root)
         : sock_(ios_)
         , acceptor_(ios_)
@@ -55,12 +55,12 @@ public:
         acceptor_.listen(
             boost::asio::socket_base::max_connections);
         acceptor_.async_accept(sock_,
-            std::bind(&http_sync_server::on_accept, this,
+            std::bind(&sync_server::on_accept, this,
                 beast::asio::placeholders::error));
         thread_ = std::thread{[&]{ ios_.run(); }};
     }
 
-    ~http_sync_server()
+    ~sync_server()
     {
         error_code ec;
         ios_.dispatch(
@@ -110,11 +110,11 @@ private:
     struct lambda
     {
         int id;
-        http_sync_server& self;
+        sync_server& self;
         socket_type sock;
         boost::asio::io_service::work work;
 
-        lambda(int id_, http_sync_server& self_,
+        lambda(int id_, sync_server& self_,
                 socket_type&& sock_)
             : id(id_)
             , self(self_)
@@ -139,7 +139,7 @@ private:
         static int id_ = 0;
         std::thread{lambda{++id_, *this, std::move(sock_)}}.detach();
         acceptor_.async_accept(sock_,
-            std::bind(&http_sync_server::on_accept, this,
+            std::bind(&sync_server::on_accept, this,
                 asio::placeholders::error));
     }
 
@@ -165,7 +165,7 @@ private:
                 res.status = 404;
                 res.reason = "Not Found";
                 res.version = req.version;
-                res.headers.insert("Server", "http_sync_server");
+                res.headers.insert("Server", "sync_server");
                 res.headers.insert("Content-Type", "text/html");
                 res.body = "The file '" + path + "' was not found";
                 prepare(res);
@@ -194,7 +194,7 @@ private:
                 res.status = 500;
                 res.reason = "Internal Error";
                 res.version = req.version;
-                res.headers.insert("Server", "http_sync_server");
+                res.headers.insert("Server", "sync_server");
                 res.headers.insert("Content-Type", "text/html");
                 res.body =
                     std::string{"An internal error occurred: "} + e.what();
