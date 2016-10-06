@@ -23,6 +23,7 @@ add_executable (core-tests
     handler_concepts.cpp
     placeholders.cpp
     prepare_buffers.cpp
+    server.cpp
     static_streambuf.cpp
     static_string.cpp
     stream_concepts.cpp
