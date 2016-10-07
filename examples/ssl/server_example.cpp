@@ -12,6 +12,7 @@
 #include <beast/http.hpp>
 #include <beast/server/io_list.hpp>
 #include <beast/server/io_threads.hpp>
+#include <beast/server/ssl_socket.hpp>
 #include <beast/unit_test/dstream.hpp>
 #include <beast/test/sig_wait.hpp>
 #include <boost/asio.hpp>
