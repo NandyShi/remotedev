@@ -9,8 +9,13 @@
 
 #include <beast/core/placeholders.hpp>
 #include <beast/core/error.hpp>
+#include <beast/http.hpp>
 #include <beast/server/io_list.hpp>
+#include <beast/server/io_threads.hpp>
+#include <beast/unit_test/dstream.hpp>
+#include <beast/test/sig_wait.hpp>
 #include <boost/asio.hpp>
+#include <iostream>
 #include <memory>
 
 namespace beast {
@@ -25,6 +30,7 @@ public:
 template<class Impl>
 class basic_listener :
     public io_object,
+    public io_list::work,
     public std::enable_shared_from_this<basic_listener<Impl>>
 {
 protected:
@@ -110,6 +116,7 @@ private:
 template<class Impl>
 class basic_server
 {
+    io_list iov_;
     boost::asio::io_service& ios_;
 
 public:
@@ -122,6 +129,14 @@ public:
     get_io_service()
     {
         return ios_;
+    }
+
+    template<class T, class... Args>
+    std::shared_ptr<T>
+    emplace(Args&&... args)
+    {
+        return iov_.template emplace<T>(
+            std::forward<Args>(args)...);
     }
 };
 
@@ -154,32 +169,57 @@ struct server : basic_server<server>
     }
 };
 
+} // beast
+
 //------------------------------------------------------------------------------
 
-class server_test : public unit_test::suite
+void doRequest()
 {
-public:
-    void
-    testServer()
-    {
-        boost::asio::io_service ios;
-        server s{ios};
-        auto sl = std::make_shared<listener>(ios);
+    std::string const host = "127.0.0.1";
+    boost::asio::io_service ios;
+    boost::asio::ip::tcp::resolver r{ios};
+    boost::asio::ip::tcp::socket sock{ios};
+    boost::asio::connect(sock,
+        r.resolve(boost::asio::ip::tcp::resolver::query{host, "6000"}));
 
-        error_code ec;
-        using address_type = boost::asio::ip::address;
-        using endpoint_type = boost::asio::ip::tcp::endpoint;
-        sl->open(endpoint_type{
-            address_type::from_string("127.0.0.1"), 6000}, ec);
+    beast::http::request_v1<beast::http::empty_body> req;
+    req.method = "GET";
+    req.url = "/";
+    req.version = 11;
+    req.headers.replace("Host", host + ":" +
+        std::to_string(sock.remote_endpoint().port()));
+    req.headers.replace("User-Agent", "Beast");
+    beast::http::prepare(req);
+    beast::http::write(sock, req);
+
+    // Receive and print HTTP response using beast
+    beast::streambuf sb;
+    beast::http::response_v1<beast::http::streambuf_body> resp;
+    beast::http::read(sock, sb, resp);
+    beast::unit_test::dstream dout{std::cout};
+    dout << resp;
+}
+
+int main()
+{
+    using namespace beast;
+    io_threads iot;
+    server s{iot.get_io_service()};
+    auto sl = s.emplace<listener>(s.get_io_service());
+
+    error_code ec;
+    using address_type = boost::asio::ip::address;
+    using endpoint_type = boost::asio::ip::tcp::endpoint;
+    sl->open(endpoint_type{
+        address_type::from_string("127.0.0.1"), 6000}, ec);
+
+    try
+    {
+        doRequest();
     }
-
-    void run() override
+    catch(std::exception const& e)
     {
-        testServer();
-        pass();
+        beast::unit_test::dstream dout{std::cout};
+        dout << e.what() << "\n";
     }
 };
-
-BEAST_DEFINE_TESTSUITE(server,core,beast);
-
-} // beast

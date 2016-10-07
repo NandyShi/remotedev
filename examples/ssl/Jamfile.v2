@@ -52,3 +52,9 @@ exe websocket-ssl-example
   :
     websocket_ssl_example.cpp
   ;
+
+exe server-example
+  :
+    server_example.cpp
+  ;
+

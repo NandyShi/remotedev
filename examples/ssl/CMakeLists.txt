@@ -30,3 +30,15 @@ target_link_libraries(websocket-ssl-example ${OPENSSL_LIBRARIES})
 if (NOT WIN32)
     target_link_libraries(websocket-ssl-example ${Boost_LIBRARIES} Threads::Threads)
 endif()
+
+add_executable (server-example
+    ${BEAST_INCLUDES}
+    ${EXTRAS_INCLUDES}
+    server_example.cpp
+)
+
+target_link_libraries(server-example ${OPENSSL_LIBRARIES})
+
+if (NOT WIN32)
+    target_link_libraries(server-example ${Boost_LIBRARIES} Threads::Threads)
+endif()
