@@ -37,6 +37,7 @@ public:
     /// The type of the lowest layer.
     using lowest_layer_type = stream_type::lowest_layer_type;
 
+    ssl_socket() = default;
     ssl_socket(ssl_socket&&) = default;
     ssl_socket(ssl_socket const&) = delete;
     ssl_socket& operator=(ssl_socket&&) = default;
@@ -250,6 +251,15 @@ public:
     {
         return p_->async_read_some(buffers,
             BOOST_ASIO_MOVE_CAST(ReadHandler)(handler))
+    }
+
+    friend
+    static
+    void
+    swap(ssl_socket& s1, ssl_socket& s2)
+    {
+        using std::swap;
+        swap(s1.p_, s2.p_);
     }
 };
 

@@ -19,20 +19,22 @@
 #include <iostream>
 #include <memory>
 
+/*  Notes
+    
+    * All I/O objects use a strand, whether they need it or not
+
+    * You have to have OpenSSL whether you use it or not
+
+    * io_list doesn't compose well, what if you want to track
+      a subset of objects?
+*/
+
 namespace beast {
 
-class io_object
-{
-public:
-    virtual ~io_object() = default;
-    virtual void close() = 0;
-};
-
 template<class Impl>
-class basic_listener :
-    public io_object,
-    public io_list::work,
-    public std::enable_shared_from_this<basic_listener<Impl>>
+class basic_listener
+    : public io_list::work
+    , public std::enable_shared_from_this<basic_listener<Impl>>
 {
 protected:
     using socket_type =
@@ -114,6 +116,183 @@ private:
     acceptor_type acceptor_;
 };
 
+//------------------------------------------------------------------------------
+
+template<class Impl>
+class basic_http_session
+    : public io_list::work
+    , public std::enable_shared_from_this<
+        basic_http_session<Impl>>
+{
+protected:
+    using strand_type =
+        boost::asio::io_service::strand;
+
+    using parser_type = http::parser_v1<
+        true, http::string_body, http::headers>;
+
+public:
+    void
+    run()
+    {
+        namespace ph = beast::asio::placeholders;
+        http::async_parse(impl().stream(), rb_, p_,
+            strand_.wrap(std::bind(
+                &basic_http_session::on_parse,
+                    shared_from_this(), ph::error_code)));
+    }
+
+    template<class ConstBufferSequence>
+    void
+    run(ConstBufferSequence const& buffers)
+    {
+        static_assert(
+            is_ConstBufferSequence<ConstBufferSequence>::value,
+                "ConstBufferSequence requirements not met");
+        using boost::asio::buffer_copy;
+        using boost::asio::buffer_size;
+        rb_.commit(buffer_copy(
+            rb.prepare(buffer_size(buffers)),
+                buffers));
+        run();
+    }
+
+    template<class Body, class Headers>
+    void
+    write(http::response_v1<Body, Headers>&& m)
+    {
+        namespace ph = beast::asio::placeholders;
+        async_write(impl().stream, std::move(m),
+            strand_.wrap(std::bind(
+                &basic_http_session::on_write,
+                    shared_from_this(), ph::error_code)));
+    }
+
+private:
+    template<class Stream, class Handler,
+        bool isRequest, class Body, class Headers>
+    class write_op
+    {
+        using alloc_type =
+            handler_alloc<char, Handler>;
+
+        struct data
+        {
+            Stream& s;
+            http::message_v1<isRequest, Body, Headers> m;
+            Handler h;
+            bool cont;
+
+            template<class DeducedHandler>
+            data(DeducedHandler&& h_, Stream& s_,
+                    http::message_v1<isRequest, Body, Headers>&& m_)
+                : s(s_)
+                , m(std::move(m_))
+                , h(std::forward<DeducedHandler>(h_))
+                , cont(boost_asio_handler_cont_helpers::
+                    is_continuation(h))
+            {
+            }
+        };
+
+        std::shared_ptr<data> d_;
+
+    public:
+        write_op(write_op&&) = default;
+        write_op(write_op const&) = default;
+
+        template<class DeducedHandler, class... Args>
+        write_op(DeducedHandler&& h, Stream& s, Args&&... args)
+            : d_(std::allocate_shared<data>(alloc_type{h},
+                std::forward<DeducedHandler>(h), s,
+                    std::forward<Args>(args)...))
+        {
+            (*this)(error_code{}, false);
+        }
+
+        void
+        operator()(error_code ec, bool again = true)
+        {
+            auto& d = *d_;
+            d.cont = d.cont || again;
+            if(! again)
+            {
+                http::async_write(d.s, d.m, std::move(*this));
+                return;
+            }
+            d.h(ec);
+        }
+
+        friend
+        void* asio_handler_allocate(
+            std::size_t size, write_op* op)
+        {
+            return boost_asio_handler_alloc_helpers::
+                allocate(size, op->d_->h);
+        }
+
+        friend
+        void asio_handler_deallocate(
+            void* p, std::size_t size, write_op* op)
+        {
+            return boost_asio_handler_alloc_helpers::
+                deallocate(p, size, op->d_->h);
+        }
+
+        friend
+        bool asio_handler_is_continuation(write_op* op)
+        {
+            return op->d_->cont;
+        }
+
+        template<class Function>
+        friend
+        void asio_handler_invoke(Function&& f, write_op* op)
+        {
+            return boost_asio_handler_invoke_helpers::
+                invoke(f, op->d_->h);
+        }
+    };
+
+    template<class Stream,
+        bool isRequest, class Body, class Headers,
+            class DeducedHandler>
+    static
+    void
+    async_write(Stream& stream, http::message_v1<
+        isRequest, Body, Headers>&& msg,
+            DeducedHandler&& handler)
+    {
+        write_op<Stream, typename std::decay<DeducedHandler>::type,
+            isRequest, Body, Headers>{std::forward<DeducedHandler>(
+                handler), stream, std::move(msg)};
+    }
+
+    Impl&
+    impl()
+    {
+        return static_cast<Impl&>(*this);
+    }
+
+    void
+    on_parse(error_code& ec)
+    {
+        if(ec == boost::asio::error::operation_aborted)
+            return;
+        if(ec)
+        {
+            return;
+        }
+        impl().on_request(p_.release());
+    }
+
+    streambuf rb_;
+    strand_type strand_;
+    parser_type p_;
+};
+
+//------------------------------------------------------------------------------
+
 template<class Impl>
 class basic_server
 {
@@ -136,7 +315,7 @@ public:
     std::shared_ptr<T>
     emplace(Args&&... args)
     {
-        return iov_.template emplace<T>(
+        return iov_.template emplace<T>(ios_,
             std::forward<Args>(args)...);
     }
 };
@@ -206,7 +385,7 @@ int main()
     using namespace beast;
     io_threads iot;
     server s{iot.get_io_service()};
-    auto sl = s.emplace<listener>(s.get_io_service());
+    auto sl = s.emplace<listener>();
 
     error_code ec;
     using address_type = boost::asio::ip::address;
