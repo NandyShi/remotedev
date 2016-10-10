@@ -49,7 +49,7 @@ The WebSocket protocol is described fully in
 [section:creation Creation]
 
 The interface to Beast's WebSocket implementation is a single template
-class [link beast.ref.websocket__stream `beast::websocket::stream`] which
+class [link beast.ref.beast__websocket__stream `beast::websocket::stream`] which
 wraps a "next layer" object. The next layer object must meet the requirements
 of [link beast.ref.streams.SyncStream [*`SyncReadStream`]] if synchronous
 operations are performed, or
@@ -156,7 +156,7 @@ for websocket, and the other side sends an appropriate HTTP response
 indicating that the request was accepted and that the connection has
 been upgraded. The HTTP Upgrade request must include the Host HTTP field,
 and the URI of the resource to request.
-[link beast.ref.websocket__stream.handshake `handshake`] is used to send the
+[link beast.ref.beast__websocket__stream.handshake `handshake`] is used to send the
 request with the required host and resource strings.
 ```
     beast::websocket::stream<boost::asio::ip::tcp::socket> ws{ios};
@@ -165,7 +165,7 @@ request with the required host and resource strings.
     ws.handshake("ws.example.com:80", "/cgi-bin/bitcoin-prices");
 ```
 
-The [link beast.ref.websocket__stream `stream`] automatically
+The [link beast.ref.beast__websocket__stream `stream`] automatically
 handles receiving and processing the HTTP response to the handshake request.
 The call to handshake is successful if a HTTP response is received with the
 101 "Switching Protocols" status code. On failure, an error is returned or an
@@ -236,7 +236,7 @@ void echo(beast::websocket::stream<boost::asio::ip::tcp::socket>& ws)
 ```
 
 [important
-    Calls to [link beast.ref.websocket__stream.set_option `set_option`]
+    Calls to [link beast.ref.beast__websocket__stream.set_option `set_option`]
     must be made from the same implicit or explicit strand as that used
     to perform other operations.
 ]
@@ -314,7 +314,7 @@ gives callers control over the size of these frames:
 The WebSocket protocol defines a procedure and control message for initiating
 a close of the session. Handling of close initiated by the remote end of the
 connection is performed automatically. To manually initiate a close, use
-[link beast.ref.websocket__stream.close `close`]:
+[link beast.ref.beast__websocket__stream.close `close`]:
 ```
     ws.close();
 ```
@@ -329,7 +329,7 @@ error, a read operation is required. ]
 [section:pongs Pong messages]
 
 To receive pong control frames, callers may register a "pong callback" using
-[link beast.ref.websocket__stream.set_option `set_option`]. The object provided
+[link beast.ref.beast__websocket__stream.set_option `set_option`]. The object provided
 with this option should be callable with the following signature:
 ```
     void on_pong(ping_data const& payload);
@@ -417,7 +417,7 @@ use or require threads.
 
 [section:threads Thread Safety]
 
-Like a regular asio socket, a [link beast.ref.websocket__stream `stream`] is
+Like a regular asio socket, a [link beast.ref.beast__websocket__stream `stream`] is
 not thread safe. Callers are responsible for synchronizing operations on the
 socket using an implicit or explicit strand, as per the Asio documentation.
 The asynchronous interface supports one active read and one active write

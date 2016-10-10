@@ -94,7 +94,7 @@ to Boost.Asio. The implementation also uses handler allocation hooks
 operations.
 
 There is no need for inheritance or virtual members in a
-[link beast.ref.websocket__stream `websocket::stream`].
+[link beast.ref.beast__websocket__stream `websocket::stream`].
 All operations are templated and transparent to the compiler, allowing for
 maximum inlining and optimization.
 
