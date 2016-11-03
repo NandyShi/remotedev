@@ -159,7 +159,7 @@ public:
 
     template<class Body, class Headers>
     void
-    write(http::response_v1<Body, Headers>&& m)
+    write(http::response<Body, Headers>&& m)
     {
         namespace ph = beast::asio::placeholders;
         async_write(impl().stream, std::move(m),
@@ -179,13 +179,13 @@ private:
         struct data
         {
             Stream& s;
-            http::message_v1<isRequest, Body, Headers> m;
+            http::message<isRequest, Body, Headers> m;
             Handler h;
             bool cont;
 
             template<class DeducedHandler>
             data(DeducedHandler&& h_, Stream& s_,
-                    http::message_v1<isRequest, Body, Headers>&& m_)
+                    http::message<isRequest, Body, Headers>&& m_)
                 : s(s_)
                 , m(std::move(m_))
                 , h(std::forward<DeducedHandler>(h_))
@@ -259,7 +259,7 @@ private:
             class DeducedHandler>
     static
     void
-    async_write(Stream& stream, http::message_v1<
+    async_write(Stream& stream, http::message<
         isRequest, Body, Headers>&& msg,
             DeducedHandler&& handler)
     {
@@ -362,7 +362,7 @@ void doRequest()
     boost::asio::connect(sock,
         r.resolve(boost::asio::ip::tcp::resolver::query{host, "6000"}));
 
-    beast::http::request_v1<beast::http::empty_body> req;
+    beast::http::request<beast::http::empty_body> req;
     req.method = "GET";
     req.url = "/";
     req.version = 11;
@@ -374,7 +374,7 @@ void doRequest()
 
     // Receive and print HTTP response using beast
     beast::streambuf sb;
-    beast::http::response_v1<beast::http::streambuf_body> resp;
+    beast::http::response<beast::http::streambuf_body> resp;
     beast::http::read(sock, sb, resp);
     beast::unit_test::dstream dout{std::cout};
     dout << resp;
