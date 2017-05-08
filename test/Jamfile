@@ -42,6 +42,7 @@ unit-test core-tests :
 unit-test http-tests :
     ../extras/beast/unit_test/main.cpp
     http/basic_parser.cpp
+    http/buffer_body.cpp
     http/concepts.cpp
     http/design.cpp
     http/dynamic_body.cpp

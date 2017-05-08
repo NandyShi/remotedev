@@ -22,6 +22,8 @@
 namespace beast {
 namespace http {
 
+// DEPRECATED STUFF BELOW HERE
+
 /** Returns a chunk-encoded ConstBufferSequence.
 
     This returns a buffer sequence representing the

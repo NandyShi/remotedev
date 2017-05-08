@@ -12,6 +12,8 @@
 #include <beast/core/error.hpp>
 #include <beast/core/multi_buffer.hpp>
 #include <beast/http/message.hpp>
+#include <boost/optional.hpp>
+#include <utility>
 
 namespace beast {
 namespace http {
@@ -81,6 +83,11 @@ private:
         DynamicBuffer const& body_;
 
     public:
+        using is_deferred = std::false_type;
+
+        using const_buffers_type =
+            typename DynamicBuffer::const_buffers_type;
+
         template<bool isRequest, class Fields>
         explicit
         writer(message<
@@ -107,6 +114,12 @@ private:
         {
             wf(body_.data());
             return true;
+        }
+
+        boost::optional<std::pair<const_buffers_type, bool>>
+        read(error_code& ec)
+        {
+            return {{body_.data(), false}};
         }
     };
 };

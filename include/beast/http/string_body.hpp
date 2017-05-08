@@ -13,8 +13,10 @@
 #include <beast/http/message.hpp>
 #include <beast/core/detail/type_traits.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/optional.hpp>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace beast {
 namespace http {
@@ -94,6 +96,11 @@ private:
         value_type const& body_;
 
     public:
+        using is_deferred = std::false_type;
+
+        using const_buffers_type =
+            boost::asio::const_buffers_1;
+
         template<bool isRequest, class Fields>
         explicit
         writer(message<
@@ -120,6 +127,13 @@ private:
         {
             wf(boost::asio::buffer(body_));
             return true;
+        }
+
+        boost::optional<std::pair<const_buffers_type, bool>>
+        read(error_code& ec)
+        {
+            return {{const_buffers_type{
+                body_.data(), body_.size()}, false}};
         }
     };
 };

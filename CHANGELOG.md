@@ -1,3 +1,9 @@
+HTTP:
+
+* Refactor HTTP serialization
+
+--------------------------------------------------------------------------------
+
 Version 44
 
 * Use BOOST_THROW_EXCEPTION
