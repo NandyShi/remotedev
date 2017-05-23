@@ -81,7 +81,7 @@ public:
             "Mismatched writer and message");
 
     using type = std::integral_constant<bool,
-        std::is_nothrow_constructible<T, M const&>::value
+        std::is_constructible<T, M const&>::value
         && type1::value
         && type2::value
     >;
