@@ -365,7 +365,8 @@ accept_ex(ResponseDecorator const& decorator, error_code& ec)
 
 template<class NextLayer>
 template<class ConstBufferSequence>
-void
+typename std::enable_if<! http::detail::is_header<
+    ConstBufferSequence>::value>::type
 stream<NextLayer>::
 accept(ConstBufferSequence const& buffers)
 {
@@ -383,7 +384,8 @@ accept(ConstBufferSequence const& buffers)
 template<class NextLayer>
 template<
     class ConstBufferSequence, class ResponseDecorator>
-void
+typename std::enable_if<! http::detail::is_header<
+    ConstBufferSequence>::value>::type
 stream<NextLayer>::
 accept_ex(ConstBufferSequence const& buffers,
     ResponseDecorator const &decorator)
@@ -404,7 +406,8 @@ accept_ex(ConstBufferSequence const& buffers,
 
 template<class NextLayer>
 template<class ConstBufferSequence>
-void
+typename std::enable_if<! http::detail::is_header<
+    ConstBufferSequence>::value>::type
 stream<NextLayer>::
 accept(ConstBufferSequence const& buffers, error_code& ec)
 {
@@ -425,7 +428,8 @@ accept(ConstBufferSequence const& buffers, error_code& ec)
 template<class NextLayer>
 template<
     class ConstBufferSequence, class ResponseDecorator>
-void
+typename std::enable_if<! http::detail::is_header<
+    ConstBufferSequence>::value>::type
 stream<NextLayer>::
 accept_ex(ConstBufferSequence const& buffers,
     ResponseDecorator const& decorator, error_code& ec)
@@ -641,8 +645,9 @@ async_accept_ex(ResponseDecorator const& decorator,
 
 template<class NextLayer>
 template<class ConstBufferSequence, class AcceptHandler>
-async_return_type<
-    AcceptHandler, void(error_code)>
+typename std::enable_if<
+    ! http::detail::is_header<ConstBufferSequence>::value,
+    async_return_type<AcceptHandler, void(error_code)>>::type
 stream<NextLayer>::
 async_accept(ConstBufferSequence const& buffers,
     AcceptHandler&& handler)
@@ -664,8 +669,9 @@ async_accept(ConstBufferSequence const& buffers,
 template<class NextLayer>
 template<class ConstBufferSequence,
     class ResponseDecorator, class AcceptHandler>
-async_return_type<
-    AcceptHandler, void(error_code)>
+typename std::enable_if<
+    ! http::detail::is_header<ConstBufferSequence>::value,
+    async_return_type<AcceptHandler, void(error_code)>>::type
 stream<NextLayer>::
 async_accept_ex(ConstBufferSequence const& buffers,
     ResponseDecorator const& decorator,
