@@ -32,12 +32,10 @@ namespace websocket {
 /// The type of object holding HTTP Upgrade requests
 using request_type =
     http::message<true, http::empty_body, http::fields>;
-    //http::request_header;
 
 /// The type of object holding HTTP Upgrade responses
 using response_type =
-    //http::response_header;
-    http::response<http::string_body, http::fields>;
+    http::message<false, http::string_body, http::fields>;
 
 /** Information about a WebSocket frame.
 
