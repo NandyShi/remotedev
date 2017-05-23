@@ -2975,9 +2975,9 @@ private:
             string_view const& target,
                 Decorator const& decorator);
 
-    template<class Decorator>
+    template<class Fields, class Decorator>
     response_type
-    build_response(request_type const& req,
+    build_response(http::header<true, Fields> const& req,
         Decorator const& decorator);
 
     void

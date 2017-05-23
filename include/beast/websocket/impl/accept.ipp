@@ -188,8 +188,8 @@ class stream<NextLayer>::accept_op
 
         template<class Buffers>
         data(Handler& handler, stream<NextLayer>& ws_,
-                Buffers const& buffers,
-                    Decorator const& decorator_)
+            Buffers const& buffers,
+                Decorator const& decorator_)
             : ws(ws_)
             , decorator(decorator_)
         {

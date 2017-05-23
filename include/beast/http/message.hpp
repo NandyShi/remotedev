@@ -20,7 +20,6 @@
 namespace beast {
 namespace http {
 
-#if BEAST_DOXYGEN
 /** A container for a HTTP request or response header.
 
     A header includes the Start Line and Fields.
@@ -33,6 +32,7 @@ namespace http {
 
     @li Invoke algorithms which operate on the header only.
 */
+#if BEAST_DOXYGEN
 template<bool isRequest, class Fields>
 struct header
 
